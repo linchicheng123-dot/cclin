@@ -2,20 +2,82 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <base href="/cclin/" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#05060a" />
     <meta name="description" content="KCHAO by CC-LIN - Visual Art Director and IP Creator portfolio." />
     <meta property="og:title" content="KCHAO by CC-LIN | Visual Art Director & IP Creator" />
     <meta property="og:description" content="Beyond styles. Building new visual worlds." />
-    <meta property="og:image" content="./assets/media/kchao-poster.webp" />
+    <meta property="og:image" content="./assets/media/kchao-poster.webp?v=20260615-clean" />
     <meta property="og:type" content="website" />
-    <link rel="preload" as="image" href="./assets/media/kchao-poster.webp" />
+    <link rel="preload" as="image" href="./assets/media/kchao-poster.webp?v=20260615-clean" />
     <title>KCHAO by CC-LIN | Portfolio</title>
-    <script type="module" crossorigin src="./assets/app-v4-live.js?v=20260615-path"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-DNkidnMY.css?v=20260615-path">
+
+    <script>
+      (() => {
+        const VERSION = "20260615-clean";
+        const fixAssetUrl = (value) => {
+          if (!value || typeof value !== "string") return value;
+          if (value.startsWith("data:") || value.startsWith("blob:")) return value;
+
+          try {
+            let raw = value.trim();
+            if (raw.startsWith("/assets/")) raw = "/cclin" + raw;
+            const url = new URL(raw, document.baseURI);
+
+            if (url.origin === location.origin) {
+              if (url.pathname.startsWith("/assets/")) {
+                url.pathname = "/cclin" + url.pathname;
+              }
+              if (url.pathname.startsWith("/cclin/assets/")) {
+                url.searchParams.set("v", VERSION);
+                return url.href;
+              }
+            }
+          } catch (error) {}
+
+          return value;
+        };
+
+        const fixCssUrls = (value) => {
+          if (!value || typeof value !== "string" || !value.includes("assets/")) return value;
+          return value.replace(/url\((['"]?)(.*?)\1\)/g, (_, quote, url) => {
+            return `url("${fixAssetUrl(url)}")`;
+          });
+        };
+
+        const originalSetAttribute = Element.prototype.setAttribute;
+        Element.prototype.setAttribute = function (name, value) {
+          const key = String(name).toLowerCase();
+          if ((key === "src" || key === "poster" || key === "href") && typeof value === "string") {
+            value = fixAssetUrl(value);
+          }
+          return originalSetAttribute.call(this, name, value);
+        };
+
+        const originalSetProperty = CSSStyleDeclaration.prototype.setProperty;
+        CSSStyleDeclaration.prototype.setProperty = function (name, value, priority) {
+          return originalSetProperty.call(this, name, fixCssUrls(value), priority);
+        };
+
+        for (const prop of ["backgroundImage", "background", "maskImage", "webkitMaskImage"]) {
+          const descriptor = Object.getOwnPropertyDescriptor(CSSStyleDeclaration.prototype, prop);
+          if (descriptor && descriptor.set) {
+            Object.defineProperty(CSSStyleDeclaration.prototype, prop, {
+              get: descriptor.get,
+              set(value) {
+                descriptor.set.call(this, fixCssUrls(value));
+              },
+            });
+          }
+        }
+      })();
+    </script>
+
+    <script type="module" crossorigin src="./assets/app-v4-live.js?v=20260615-clean"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-DNkidnMY.css?v=20260615-clean">
   </head>
   <body>
     <div id="root"></div>
   </body>
 </html>
-<base href="/cclin/" />
